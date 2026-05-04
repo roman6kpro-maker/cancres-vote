@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cancres. EN COURT — Admin</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0D0D0D;
+      color: #F5F2EC;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Auth overlay ── */
+    #auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: #0D0D0D;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 20px;
+    }
+
+    .auth-box {
+      background: #141414;
+      border: 1px solid #232323;
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+
+    .auth-logo {
+      font-size: 26px;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+
+    .auth-logo .accent { color: #E85D1A; }
+
+    .auth-box .auth-label {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(245, 242, 236, 0.35);
+      margin-bottom: 36px;
+    }
+
+    .auth-input {
+      width: 100%;
+      background: #0D0D0D;
+      border: 1.5px solid #2A2A2A;
+      border-radius: 8px;
+      padding: 13px 16px;
+      color: #F5F2EC;
+      font-size: 15px;
+      font-family: inherit;
+      text-align: center;
+      letter-spacing: 5px;
+      margin-bottom: 14px;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+
+    .auth-input::placeholder {
+      letter-spacing: 1px;
+      color: rgba(245, 242, 236, 0.25);
+    }
+
+    .auth-input:focus { border-color: #E85D1A; }
+
+    .auth-input.shake {
+      border-color: #c0392b;
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .auth-btn {
+      width: 100%;
+      background: #E85D1A;
+      color: #fff;
+      border: none;
+      padding: 13px;
+      font-size: 14px;
+      font-weight: 800;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: 0.3px;
+      transition: background 0.18s;
+    }
+
+    .auth-btn:hover { background: #f4692b; }
+
+    .auth-error {
+      color: #e74c3c;
+      font-size: 12.5px;
+      margin-top: 12px;
+      min-height: 18px;
+    }
+
+    /* ── Results page ── */
+    #results-page { display: none; }
+
+    header {
+      padding: 44px 24px 28px;
+      text-align: center;
+      border-bottom: 1px solid rgba(232, 93, 26, 0.15);
+    }
+
+    .event-title {
+      font-size: clamp(26px, 5vw, 44px);
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .event-title .accent { color: #E85D1A; }
+
+    .event-sub {
+      margin-top: 8px;
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: rgba(245, 242, 236, 0.3);
+    }
+
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 44px 20px 80px;
+    }
+
+    /* ── Top bar ── */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .results-title {
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .badge {
+      background: #141414;
+      border: 1px solid #2A2A2A;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12.5px;
+      color: rgba(245, 242, 236, 0.5);
+    }
+
+    .badge strong {
+      color: #E85D1A;
+      font-weight: 700;
+    }
+
+    .refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1.5px solid #2A2A2A;
+      color: rgba(245, 242, 236, 0.6);
+      padding: 7px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.18s, color 0.18s;
+    }
+
+    .refresh-btn:hover {
+      border-color: #E85D1A;
+      color: #E85D1A;
+    }
+
+    .refresh-icon {
+      display: inline-block;
+      transition: transform 0.5s ease;
+    }
+
+    .refresh-btn.spinning .refresh-icon {
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* ── Film rows ── */
+    .film-row {
+      margin-bottom: 20px;
+    }
+
+    .row-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 9px;
+    }
+
+    .row-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .rank {
+      font-size: 12px;
+      font-weight: 800;
+      color: rgba(245, 242, 236, 0.25);
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .rank.gold   { color: #E85D1A; }
+    .rank.silver { color: rgba(245, 242, 236, 0.5); }
+    .rank.bronze { color: #a0672a; }
+
+    .film-name {
+      font-size: 15.5px;
+      font-weight: 600;
+    }
+
+    .vote-count {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #E85D1A;
+      white-space: nowrap;
+    }
+
+    .vote-count.zero { color: rgba(245, 242, 236, 0.2); }
+
+    .bar-track {
+      margin-left: 34px;
+      height: 5px;
+      background: #1C1C1C;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.7s cubic-bezier(.22,.61,.36,1);
+    }
+
+    .bar-fill.first  { background: #E85D1A; }
+    .bar-fill.other  { background: rgba(232, 93, 26, 0.4); }
+    .bar-fill.empty  { background: transparent; }
+
+    /* ── Loading / Error ── */
+    .msg {
+      text-align: center;
+      padding: 56px 0;
+      font-size: 14px;
+      color: rgba(245, 242, 236, 0.35);
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Auth -->
+  <div id="auth-overlay">
+    <div class="auth-box">
+      <div class="auth-logo">Cancres.<span class="accent"> EN COURT</span></div>
+      <p class="auth-label">Espace administrateur</p>
+      <input
+        type="password"
+        id="pwd-input"
+        class="auth-input"
+        placeholder="Mot de passe"
+        autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') checkPwd()"
+      >
+      <button class="auth-btn" onclick="checkPwd()">Accéder aux résultats</button>
+      <p class="auth-error" id="auth-error"></p>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results-page">
+    <header>
+      <h1 class="event-title">Cancres.<span class="accent"> EN COURT</span></h1>
+      <p class="event-sub">Résultats du vote</p>
+    </header>
+
+    <main>
+      <div class="top-bar">
+        <div class="top-left">
+          <h2 class="results-title">Classement</h2>
+          <div class="badge">Total : <strong id="total-count">—</strong> vote(s)</div>
+        </div>
+        <button class="refresh-btn" id="refresh-btn" onclick="loadResults()">
+          <span class="refresh-icon">↻</span> Actualiser
+        </button>
+      </div>
+
+      <div id="results-list">
+        <div class="msg">Chargement des résultats…</div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://qjkfmjvjtxiuokanjral.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_m99zFUjwepS_ylvSsOXCjA_IUQAmUXa';
+    const PASSWORD     = 'cancres2026';
+
+    const FILMS = [
+      'Titre 1', 'Titre 2', 'Titre 3', 'Titre 4', 'Titre 5',
+      'Titre 6', 'Titre 7', 'Titre 8', 'Titre 9', 'Titre 10'
+    ];
+
+    function checkPwd() {
+      const input = document.getElementById('pwd-input');
+      const error = document.getElementById('auth-error');
+
+      if (input.value === PASSWORD) {
+        document.getElementById('auth-overlay').classList.add('hidden');
+        document.getElementById('results-page').style.display = 'block';
+        loadResults();
+      } else {
+        error.textContent = 'Mot de passe incorrect.';
+        input.classList.add('shake');
+        input.value = '';
+        setTimeout(() => {
+          input.classList.remove('shake');
+          error.textContent = '';
+        }, 1800);
+      }
+    }
+
+    async function loadResults() {
+      const list = document.getElementById('results-list');
+      const btn  = document.getElementById('refresh-btn');
+
+      list.innerHTML = '<div class="msg">Chargement…</div>';
+      btn.classList.add('spinning');
+
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/votes?select=film&limit=10000`,
+          {
+            headers: {
+              'apikey':        SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+          }
+        );
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const votes = await res.json();
+
+        // Aggregate
+        const counts = Object.fromEntries(FILMS.map(f => [f, 0]));
+        votes.forEach(v => { if (v.film in counts) counts[v.film]++; });
+
+        const total  = votes.length;
+        const sorted = FILMS
+          .map(f => ({ film: f, votes: counts[f] }))
+          .sort((a, b) => b.votes - a.votes);
+
+        document.getElementById('total-count').textContent = total;
+
+        const max = sorted[0]?.votes || 0;
+
+        const rankClass = i => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        const barClass  = (i, v) => v === 0 ? 'empty' : i === 0 ? 'first' : 'other';
+
+        list.innerHTML = sorted.map((item, i) => {
+          const pct = max > 0 ? Math.round(item.votes / max * 100) : 0;
+          return `
+            <div class="film-row">
+              <div class="row-header">
+                <div class="row-left">
+                  <span class="rank ${rankClass(i)}">${i + 1}</span>
+                  <span class="film-name">${item.film}</span>
+                </div>
+                <span class="vote-count ${item.votes === 0 ? 'zero' : ''}">
+                  ${item.votes} vote${item.votes !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill ${barClass(i, item.votes)}" style="width:${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (e) {
+        console.error(e);
+        list.innerHTML = '<div class="msg">Erreur lors du chargement. Réessayez.</div>';
+      } finally {
+        btn.classList.remove('spinning');
+      }
+    }
+  </script>
+
+</body>
+</html>
